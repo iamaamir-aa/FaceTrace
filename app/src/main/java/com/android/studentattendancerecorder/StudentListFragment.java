@@ -6,6 +6,8 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -46,12 +48,13 @@ import java.util.Date;
 public class StudentListFragment extends Fragment implements DialogInterface.OnDismissListener, RadioGroup.OnCheckedChangeListener, View.OnClickListener {
 
 
+    private String EMP_ID ;
     private RecyclerView recyclerViewStudent;
     private RecyclerViewAdapterForStudentList recyclerViewAdapterForStudentList;
     private ArrayList<StudentsDetail> studentDetailsArrayList;
     int year, month, date;
     DatePickerDialog datePickerDialog;
-    RadioGroup radioGroup;
+   // RadioGroup radioGroup;
     TextView changeDateTextView;
     private FirebaseAuth mAuth;
     private DatabaseReference databaseRef;
@@ -82,8 +85,49 @@ public class StudentListFragment extends Fragment implements DialogInterface.OnD
                 .navigate(R.id.action_studentListFragment_to_printAttendance, bundle);
     }
 
-
     private void updateList(int i) {
+        showSpinner();
+        DatabaseReference studentsRef = databaseRef.child(EMP_ID).child("CLASS").child(CLASS_ID).child("students");
+        studentsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                studentDetailsArrayList.clear();
+                for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
+                    String key = dataSnapshot.getKey();
+                    String studentName = dataSnapshot.child("studentName").getValue(String.class);
+                    String enrollmentNumber = dataSnapshot.child("enrollmentNumber").getValue(String.class);
+                    ArrayList<Dates> ran = new ArrayList<>();
+
+                    DataSnapshot datesSnapshot = dataSnapshot.child("DATES");
+                    for (DataSnapshot d : datesSnapshot.getChildren()) {
+                        String yearParse = d.getKey();
+                        for (DataSnapshot e : d.getChildren()) {
+                            String monthParse = e.getKey();
+                            for (DataSnapshot f : e.getChildren()) {
+                                String dayParse = f.getKey();
+                                int noOfAtt = f.child("attendance").getValue(Integer.class);
+                                System.out.println(dayParse + "/" + monthParse + "/" + yearParse + "-" + noOfAtt);
+                                ran.add(new Dates(Integer.parseInt(yearParse), Integer.parseInt(monthParse), Integer.parseInt(dayParse), noOfAtt));
+                            }
+                        }
+                    }
+
+                    StudentsDetail newClass = new StudentsDetail(studentName, enrollmentNumber, key, ran);
+                    studentDetailsArrayList.add(newClass);
+                }
+
+                recyclerViewAdapterForStudentList.notifyDataSetChanged();
+                hideSpinner();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                // Handle cancellation
+            }
+        });
+    }
+
+ /*   private void updateList(int i) {
         showSpinner();
         databaseRef.child(mAuth.getCurrentUser().getUid()).child("CLASS").child(CLASS_ID).child("students").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -105,12 +149,6 @@ public class StudentListFragment extends Fragment implements DialogInterface.OnD
                                 System.out.println(dayParse + "/" + monthParse + "/" + yearParse + "-" + noOfAtt);
                                 ran.add(new Dates(Integer.parseInt(yearParse), Integer.parseInt(monthParse), Integer.parseInt(dayParse), noOfAtt));
                             }
-
-
-
-
-
-
                         }
 
                     }
@@ -128,7 +166,7 @@ public class StudentListFragment extends Fragment implements DialogInterface.OnD
 
 
     }
-
+*/
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
@@ -149,7 +187,7 @@ public class StudentListFragment extends Fragment implements DialogInterface.OnD
                         date = dayOfMonth;
                         recyclerViewAdapterForStudentList = new RecyclerViewAdapterForStudentList(getContext(),
                                 studentDetailsArrayList, StudentListFragment.this,
-                                new Dates(yearInside, monthInside, dayOfMonth, 0), CLASS_ID);
+                                new Dates(yearInside, monthInside, dayOfMonth, 0), CLASS_ID,EMP_ID);
                         recyclerViewStudent.setHasFixedSize(true);
                         recyclerViewStudent.setLayoutManager(new LinearLayoutManager(getActivity()));
                         recyclerViewStudent.setAdapter(recyclerViewAdapterForStudentList);
@@ -195,6 +233,14 @@ String[] g=dateStarted.split("-");
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+
+
+        ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
+
+        // Change the title
+        if (actionBar != null) {
+            actionBar.setTitle("Students");
+        }
         return inflater.inflate(R.layout.fragment_student_list, container, false);
     }
 
@@ -206,13 +252,20 @@ String[] g=dateStarted.split("-");
         spinner = (ProgressBar) view.findViewById(R.id.progressBar2);
         mAuth = FirebaseAuth.getInstance();
         databaseRef = FirebaseDatabase.getInstance().getReference("USERS");
+        //getting class id from the previous fragment
         CLASS_ID = StudentListFragmentArgs.fromBundle(getArguments()).getClassID();
+        EMP_ID=StudentListFragmentArgs.fromBundle(getArguments()).getEmpID();
+
         studentDetailsArrayList = new ArrayList<>();
         FloatingActionButton fabToCreateStudent = view.findViewById(R.id.floatingActionButtonAddStudent);
-        radioGroup = view.findViewById(R.id.radioGroupNumberOfAtt);
+      //  radioGroup = view.findViewById(R.id.radioGroupNumberOfAtt);
         changeDateTextView = view.findViewById(R.id.studentListDateTextView);
         recyclerViewStudent = view.findViewById(R.id.recyclerViewStudentList);
 
+//        LinearLayoutManager layoutManager = new LinearLayoutManager(context);
+//        layoutManager.setRecycleChildrenOnDetach(false);
+//        recyclerView.setLayoutManager(layoutManager);
+//
 
         final Calendar calendar = Calendar.getInstance();
         year = calendar.get(Calendar.YEAR);
@@ -223,7 +276,7 @@ String[] g=dateStarted.split("-");
         defaultDate.setText(date + "-" + month + "-" + year);
         Dates date1 = new Dates(year, month, date, 0);
 
-        recyclerViewAdapterForStudentList = new RecyclerViewAdapterForStudentList(getContext(), studentDetailsArrayList, StudentListFragment.this, date1, CLASS_ID);
+        recyclerViewAdapterForStudentList = new RecyclerViewAdapterForStudentList(getContext(), studentDetailsArrayList, StudentListFragment.this, date1, CLASS_ID,EMP_ID);
 
         updateList(1);
 
@@ -233,13 +286,18 @@ String[] g=dateStarted.split("-");
 
         //Listener
         fabToCreateStudent.setOnClickListener(this);
-        radioGroup.setOnCheckedChangeListener(this);
+      //  radioGroup.setOnCheckedChangeListener(this);
 
 
     }
 
     private void showAddStudentDialog() {
+        Bundle args = new Bundle();
+        args.putString("classId", CLASS_ID);
+        args.putString("empId", EMP_ID);
+
         AddStudent dialogueFragment = new AddStudent(CLASS_ID);
+        dialogueFragment.setArguments(args);
         dialogueFragment.show(getChildFragmentManager(), "AddStudent");
     }
 
@@ -252,15 +310,6 @@ String[] g=dateStarted.split("-");
 
     @Override
     public void onCheckedChanged(RadioGroup group, int checkedId) {
-        if (checkedId == R.id.radioButtonX1) {
-            Toast.makeText(getActivity(), "X1", Toast.LENGTH_SHORT).show();
-        }
-        if (checkedId == R.id.radioButtonX2) {
-            Toast.makeText(getActivity(), "X2", Toast.LENGTH_SHORT).show();
-        }
-        if (checkedId == R.id.radioButtonX3) {
-            Toast.makeText(getActivity(), "X3", Toast.LENGTH_SHORT).show();
-        }
     }
 
     @Override

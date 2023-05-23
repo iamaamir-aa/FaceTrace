@@ -37,9 +37,9 @@ public class RecyclerViewAdapterForStudentList extends RecyclerView.Adapter<Recy
     private Dates date;
     private FirebaseAuth mAuth;
     private DatabaseReference databaseRef;
-    private String CLASS_ID,USER_ID;
+    private String CLASS_ID,EMP_ID;
 
-    public RecyclerViewAdapterForStudentList(Context context, List<StudentsDetail> studentDetails, Fragment fragment, Dates date, String CLASS_ID) {
+    public RecyclerViewAdapterForStudentList(Context context, List<StudentsDetail> studentDetails, Fragment fragment, Dates date, String CLASS_ID,String EMP_ID) {
         this.context = context;
         this.studentDetails = studentDetails;
         this.fragment = fragment;
@@ -48,8 +48,7 @@ public class RecyclerViewAdapterForStudentList extends RecyclerView.Adapter<Recy
         this.mAuth = mAuth;
         this.databaseRef = databaseRef;
         this.CLASS_ID = CLASS_ID;
-        mAuth = FirebaseAuth.getInstance();
-        USER_ID=mAuth.getUid();
+        this.EMP_ID=EMP_ID;
         databaseRef = FirebaseDatabase.getInstance().getReference("USERS");
     }
 
@@ -68,7 +67,7 @@ public class RecyclerViewAdapterForStudentList extends RecyclerView.Adapter<Recy
             if(d.getYear()==date.getYear() && d.getDate()==date.getDate() && d.getMonth()==date.getMonth()){
                 if(d.getAttendance()==1){
                     holder.studentItemLayout.setBackgroundResource(R.drawable.rounded_edittext_green);
-holder.selection=2;
+                    holder.selection=2;
                 }else if(d.getAttendance()==-1){
                     holder.studentItemLayout.setBackgroundResource(R.drawable.rounded_edittext_red);
                 holder.selection=0;
@@ -96,12 +95,6 @@ holder.selection=2;
             super(itemView);
             studentItemLayout=itemView.findViewById(R.id.studentItem);
             student_name = itemView.findViewById(R.id.studentName);
-
-
-
-
-
-
             itemView.setOnClickListener(this);
 
         }
@@ -113,16 +106,16 @@ holder.selection=2;
 
             if (selection==1){
                 studentItemLayout.setBackgroundResource(R.drawable.rounded_edittext_green);
-                databaseRef.child(USER_ID).child("CLASS").child(CLASS_ID).child("students").child(studentsDetail.getId()).child("DATES").child(String.valueOf(date.getYear())).child(String.valueOf(date.getMonth())).child(String.valueOf(date.getDate())).child("attendance").setValue(1);
+                databaseRef.child(EMP_ID).child("CLASS").child(CLASS_ID).child("students").child(studentsDetail.getId()).child("DATES").child(String.valueOf(date.getYear())).child(String.valueOf(date.getMonth())).child(String.valueOf(date.getDate())).child("attendance").setValue(1);
                 selection=2;
             }
             else if(selection==2){
                 studentItemLayout.setBackgroundResource(R.drawable.rounded_edittext_red);
-                databaseRef.child(USER_ID).child("CLASS").child(CLASS_ID).child("students").child(studentsDetail.getId()).child("DATES").child(String.valueOf(date.getYear())).child(String.valueOf(date.getMonth())).child(String.valueOf(date.getDate())).child("attendance").setValue(-1);
+                databaseRef.child(EMP_ID).child("CLASS").child(CLASS_ID).child("students").child(studentsDetail.getId()).child("DATES").child(String.valueOf(date.getYear())).child(String.valueOf(date.getMonth())).child(String.valueOf(date.getDate())).child("attendance").setValue(-1);
                 selection=0;
             }else if(selection==0){
                 studentItemLayout.setBackgroundResource(R.drawable.rounded_edittext);
-                databaseRef.child(USER_ID).child("CLASS").child(CLASS_ID).child("students").child(studentsDetail.getId()).child("DATES").child(String.valueOf(date.getYear())).child(String.valueOf(date.getMonth())).child(String.valueOf(date.getDate())).child("attendance").setValue(0);
+                databaseRef.child(EMP_ID).child("CLASS").child(CLASS_ID).child("students").child(studentsDetail.getId()).child("DATES").child(String.valueOf(date.getYear())).child(String.valueOf(date.getMonth())).child(String.valueOf(date.getDate())).child("attendance").setValue(0);
                 selection=1;
             }
 

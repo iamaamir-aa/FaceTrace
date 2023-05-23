@@ -26,7 +26,7 @@ import java.util.ArrayList;
 
 public class AddStudent extends DialogFragment implements View.OnClickListener {
     private View v1;
-    private String KEY;
+    private String KEY,CLASS_ID,EMP_ID;
     private String studentNameString, enrollmentNumberString;
     private FirebaseAuth mAuth;
     private DatabaseReference databaseRef;
@@ -58,6 +58,11 @@ public class AddStudent extends DialogFragment implements View.OnClickListener {
         Button cancelAddStudent = v1.findViewById(R.id.buttonCancelAddStudent);
 
 
+        Bundle args = getArguments();
+        CLASS_ID=args.getString("classId");
+        EMP_ID=args.getString("empId");
+        System.out.println(CLASS_ID+EMP_ID);
+
         builder.setView(v1);
 
         //Listeners
@@ -81,10 +86,9 @@ public class AddStudent extends DialogFragment implements View.OnClickListener {
                 if((studentNameString.equals("") || enrollmentNumberString.equals(""))){
                     Toast.makeText(getContext(),"Provide all fields",Toast.LENGTH_SHORT).show();
                 }else{
-                    DatabaseReference newRef = databaseRef.child(mAuth.getCurrentUser().getUid()).child("CLASS").child(KEY).child("students").push();
-                    String key = newRef.getKey();
-                    StudentsDetail newStudent = new StudentsDetail(studentNameString, enrollmentNumberString, key, new ArrayList<>());
-                    databaseRef.child(mAuth.getCurrentUser().getUid()).child("CLASS").child(KEY).child("students").child(key).setValue(newStudent);
+                    DatabaseReference newRef = databaseRef.child(EMP_ID).child("CLASS").child(CLASS_ID).child("students").child(enrollmentNumberString);
+                    StudentsDetail newStudent = new StudentsDetail(studentNameString, enrollmentNumberString, enrollmentNumberString, new ArrayList<>());
+                    databaseRef.child(EMP_ID).child("CLASS").child(CLASS_ID).child("students").child(enrollmentNumberString).setValue(newStudent);
                     dismiss();
                 }
 

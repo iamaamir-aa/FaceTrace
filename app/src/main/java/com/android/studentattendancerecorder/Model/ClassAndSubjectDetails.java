@@ -10,6 +10,15 @@ public class ClassAndSubjectDetails {
     private String id;
     private ArrayList<StudentsDetail> students;
     private String semester;
+    private String empId;
+
+    public String getEmpId() {
+        return empId;
+    }
+
+    public void setEmpId(String empId) {
+        this.empId = empId;
+    }
 
     public String getSemester() {
         return semester;

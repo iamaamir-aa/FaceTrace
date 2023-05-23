@@ -18,6 +18,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
@@ -57,7 +59,25 @@ public class SecondFragment extends Fragment implements View.OnClickListener, Di
     DatePickerDialog datePickerDialog;
     private ProgressBar spinner;
 
+    public interface EmpIdCallback {
+        void onEmpIdRetrieved(String empId);
+    }
 
+    public void getEmpId(final AddClass.EmpIdCallback callback) {
+        DatabaseReference classIdRef = FirebaseDatabase.getInstance().getReference().child("UserIDMap");
+        classIdRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String empId = snapshot.child(mAuth.getCurrentUser().getUid()).getValue(String.class);
+                callback.onEmpIdRetrieved(empId);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                // Handle the onCancelled event if needed
+            }
+        });
+    }
 public void showSpinner(){
     spinner.setVisibility(View.VISIBLE);
 }
@@ -67,7 +87,6 @@ public void hideSpinner(){
 
     @Override
     public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
-
         inflater.inflate(R.menu.menu_class,menu);
     }
 
@@ -84,27 +103,41 @@ public void hideSpinner(){
         return false;
     }
     private void updateList(){
-        databaseRef.child(mAuth.getCurrentUser().getUid()).child("CLASS").addListenerForSingleValueEvent(new ValueEventListener() {
+        getEmpId(new AddClass.EmpIdCallback() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                classAndSubjectDetailsArrayList.clear();
-                for(DataSnapshot dataSnapshot:snapshot.getChildren()){
-                    String key=dataSnapshot.getRef().getKey();
-                    String class_name=dataSnapshot.child("class_name").getValue().toString();
-                    String subject_name=dataSnapshot.child("subject_name").getValue().toString();
-                    ClassAndSubjectDetails newClass=new ClassAndSubjectDetails(class_name,subject_name,key);
-                    classAndSubjectDetailsArrayList.add(newClass);
-                }
-                recyclerViewAdapterForClassList.notifyDataSetChanged();
-                spinner.setVisibility(View.GONE);
+            public void onEmpIdRetrieved(String empId) {
+                databaseRef.child(empId).child("CLASS").addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        classAndSubjectDetailsArrayList.clear();
+                        for(DataSnapshot dataSnapshot:snapshot.getChildren()){
+                            String key=dataSnapshot.getRef().getKey();
+                            String class_name=dataSnapshot.child("class_name").getValue().toString();
+                            String subject_name=dataSnapshot.child("subject_name").getValue().toString();
+                            ClassAndSubjectDetails newClass=new ClassAndSubjectDetails(class_name,subject_name,key);
+                            newClass.setEmpId(empId);
+                            classAndSubjectDetailsArrayList.add(newClass);
+                        }
+                        recyclerViewAdapterForClassList.notifyDataSetChanged();
+                        spinner.setVisibility(View.GONE);
 
-            }
+                    }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+
+                    }
+                });
+
+
 
             }
         });
+
+
+
+
+
     }
 
     private void updateUI(FirebaseUser user){
@@ -125,14 +158,24 @@ public void hideSpinner(){
     ) {
 
         binding = FragmentSecondBinding.inflate(inflater, container, false);
-        return binding.getRoot();
+        // Access the activity's ActionBar
 
+
+        ActionBar actionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
+
+        // Change the title
+        if (actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(false);
+            actionBar.setTitle("Classes");
+        }
+
+        return binding.getRoot();
     }
 
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         spinner = (ProgressBar)view.findViewById(R.id.progressBar);
-showSpinner();
+        showSpinner();
         mAuth=FirebaseAuth.getInstance();
         databaseRef =FirebaseDatabase.getInstance().getReference("USERS");
         recyclerViewClass = view.findViewById(R.id.recyclerViewClass);

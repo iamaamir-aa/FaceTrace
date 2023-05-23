@@ -76,6 +76,7 @@ public class printAttendance extends Fragment implements View.OnClickListener, R
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 PdfDataParticulars saveData = new PdfDataParticulars();
+                Log.d("LINE","79");
                 String departmentName = snapshot.child("departmentName").getValue().toString();
                 String teacherName = snapshot.child("name").getValue().toString();
                 String class_name = snapshot.child("CLASS").child(CLASS_ID).child("class_name").getValue().toString();
@@ -93,6 +94,7 @@ public class printAttendance extends Fragment implements View.OnClickListener, R
                 saveData.setMonth(monthString);
                 saveData.setSem(semester);
                 ArrayList<HashMap<String, HashMap<Integer, Character>>> listOfStudentAndAttendance = new ArrayList<>();
+                Log.d("LINE","97");
 
                 for (DataSnapshot d : snapshot.child("CLASS").child(CLASS_ID).child("students").getChildren()) {
                     HashMap<String, HashMap<Integer, Character>> firstHash = new HashMap<>();
@@ -560,6 +562,10 @@ double totalPer=0;
                         int notZero=0;
                         for (String s : copy.keySet()) {
                             String per=copy.get(s).toString();
+                            double d=Double.valueOf(per);
+                            if(d!=0){
+                                per=String.format("%.2f",d);
+                            }
                             studentAttTable.addCell(per);
                             totalPer+=Double.valueOf(per);
 
